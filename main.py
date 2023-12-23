@@ -31,16 +31,64 @@ def draw_grid(positions):
 
     for col in range(GRID_WIDTH):
         py.draw.line(screen, GREY, (col * TILE_SIZE, 0), (col * TILE_SIZE, HEIGHT))
-   
+
+def adjust_grid(positions):
+    all_neighbors = set()
+    new_positions = set()
+
+    for position in positions:
+        neighbors = get_neighbors(position)
+        all_neighbors.update(neighbors)
+
+        neighbors = list(filter(lambda x: x in positions, neighbors))
+
+        if len(neighbors) == 2 or len(neighbors) == 3:
+            new_positions.add(position)
+    
+    for position in all_neighbors:
+        neighbors = get_neighbors(position)
+        neighbors = list(filter(lambda x: x in positions, neighbors))
+
+        if len(neighbors) == 3:
+            new_positions.add(position)
+
+    return new_positions
+
+def get_neighbors(pos):
+    x, y = pos
+    neighbors = []
+    for dx in [-1, 0, 1]:
+        if x + dx < 0 or x + dx > GRID_WIDTH:
+            continue
+        for dy in [-1, 0, 1]:
+            if y + dy < 0 or y + dy > GRID_HEIGHT:
+                continue
+            if dx == 0 and dy == 0:
+                continue
+            
+            neighbors.append((x + dx, y + dy))
+
+    return neighbors
 
 def main():
-    
     running = True
     sim_running = False
+    count = 0
+    update_freq = FPS * 0.1
+
     positions = set()
 
     while running:
         clock.tick(FPS)
+
+        if sim_running:
+            count += 1
+
+        if count >= update_freq:
+            count = 0
+            positions = adjust_grid(positions)
+
+        py.display.set_caption("Playing" if sim_running else "Paused")
 
         for event in py.event.get():
             if event.type == py.QUIT:
@@ -64,9 +112,10 @@ def main():
                 if event.key == py.K_c:
                     positions = set()
                     sim_running = False
+                    count = 0
                 
                 if event.key == py.K_g:
-                    positions = gen(random.randrange(2, 5) * GRID_WIDTH)
+                    positions = gen(random.randrange(2, 20) * GRID_WIDTH)
                 
 
     
