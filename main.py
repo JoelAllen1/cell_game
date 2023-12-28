@@ -23,105 +23,37 @@ screen = py.display.set_mode((WIDTH, HEIGHT))
 
 clock = py.time.Clock()
 
-def wall_cell():
-    cell_id = 0
-    movable_x = False
-    movable_y = False
-    rotatable = False
-    return(movable_x, movable_y, rotatable)
 
-def blank_cell():
-    cell_id = 1
-    movable_x = True
-    movable_y = True
-    rotatable = False
-    return(movable_x, movable_y, rotatable)
-
-def blank_x_cell():
-    cell_id = 2
-    movable_x = True
-    movable_y = False
-    rotatable = True
-    return(movable_x, movable_y, rotatable)
-
-def blank_y_cell():
-    cell_id = 3
-    movable_x = False
-    movable_y = True
-    rotatable = True
-    return(movable_x, movable_y, rotatable)
-
-def pusher_up_cell():
-    cell_id = 4
-    movable_x = True
-    movable_y = True
-    rotatable = True
-    return(movable_x, movable_y, rotatable)
-
-def pusher_down_cell():
-    cell_id = 5
-    movable_x = True
-    movable_y = True
-    rotatable = True
-    return(movable_x, movable_y, rotatable)
-
-def pusher_left_cell():
-    cell_id = 6
-    movable_x = True
-    movable_y = True
-    rotatable = True
-    return(movable_x, movable_y, rotatable)
-
-def pusher_right_cell():
-    cell_id = 7
-    movable_x = True
-    movable_y = True
-    rotatable = True
-    return(movable_x, movable_y, rotatable)
-
-def rotator_clockwise_cell():
-    cell_id = 8
-    movable_x = True
-    movable_y = True
-    rotatable = False
-    return(movable_x, movable_y, rotatable)
-
-def rotator_anitclockwise_cell():
-    cell_id = 9
-    movable_x = True
-    movable_y = True
-    rotatable = False
-    return(movable_x, movable_y, rotatable)
-
-def generator_up_cell():
-    cell_id = 10
-    movable_x = True
-    movable_y = True
-    rotatable = True
-    return(movable_x, movable_y, rotatable)
-
-def generator_down_cell():
-    cell_id = 11
-    movable_x = True
-    movable_y = True
-    rotatable = True
-    return(movable_x, movable_y, rotatable)
-
-def generator_left_cell():
-    cell_id = 12
-    movable_x = True
-    movable_y = True
-    rotatable = True
-    return(movable_x, movable_y, rotatable)
-
-def generator_right_cell():
-    cell_id = 13
-    movable_x = True
-    movable_y = True
-    rotatable = True
-    return(movable_x, movable_y, rotatable)
-
-
+def cell_properties(cell_id):
+    if cell_id == 1: # Wall Cell
+        return {'movable_x': False, 'movable_y': False, 'rotatable': False}
+    elif cell_id == 2: # Blank Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': False}
+    elif cell_id == 3: # Blank X Cell
+        return {'movable_x': True, 'movable_y': False, 'rotatable': True}
+    elif cell_id == 4: # Blank Y Cell
+        return {'movable_x': False, 'movable_y': True, 'rotatable': True}
+    elif cell_id == 5: # Pusher Up Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+    elif cell_id == 6: # Pusher Down Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+    elif cell_id == 7: # Pusher Left Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+    elif cell_id == 8: # Pusher Right Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+    elif cell_id == 9: # Rotator Clockwise Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': False}
+    elif cell_id == 10: # Rotator Anticlockwise Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': False}
+    elif cell_id == 11: # Generator Up Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+    elif cell_id == 12: # Generator Down Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+    elif cell_id == 13: # Generator Left Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+    elif cell_id == 14: # Generator Right Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+   
 def gen(num):
     return set([(random.randrange(0, GRID_HEIGHT), random.randrange(0, GRID_WIDTH)) for _ in range(num)])
 
