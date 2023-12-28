@@ -1,3 +1,9 @@
+### planning ###
+# all cells will be movable before play starts including walls but the editing area will not include walls i dont want the player to move
+
+
+
+
 import pygame as py
 import random
 
@@ -16,6 +22,105 @@ FPS = 60
 screen = py.display.set_mode((WIDTH, HEIGHT))
 
 clock = py.time.Clock()
+
+def wall_cell():
+    cell_id = 0
+    movable_x = False
+    movable_y = False
+    rotatable = False
+    return(movable_x, movable_y, rotatable)
+
+def blank_cell():
+    cell_id = 1
+    movable_x = True
+    movable_y = True
+    rotatable = False
+    return(movable_x, movable_y, rotatable)
+
+def blank_x_cell():
+    cell_id = 2
+    movable_x = True
+    movable_y = False
+    rotatable = True
+    return(movable_x, movable_y, rotatable)
+
+def blank_y_cell():
+    cell_id = 3
+    movable_x = False
+    movable_y = True
+    rotatable = True
+    return(movable_x, movable_y, rotatable)
+
+def pusher_up_cell():
+    cell_id = 4
+    movable_x = True
+    movable_y = True
+    rotatable = True
+    return(movable_x, movable_y, rotatable)
+
+def pusher_down_cell():
+    cell_id = 5
+    movable_x = True
+    movable_y = True
+    rotatable = True
+    return(movable_x, movable_y, rotatable)
+
+def pusher_left_cell():
+    cell_id = 6
+    movable_x = True
+    movable_y = True
+    rotatable = True
+    return(movable_x, movable_y, rotatable)
+
+def pusher_right_cell():
+    cell_id = 7
+    movable_x = True
+    movable_y = True
+    rotatable = True
+    return(movable_x, movable_y, rotatable)
+
+def rotator_clockwise_cell():
+    cell_id = 8
+    movable_x = True
+    movable_y = True
+    rotatable = False
+    return(movable_x, movable_y, rotatable)
+
+def rotator_anitclockwise_cell():
+    cell_id = 9
+    movable_x = True
+    movable_y = True
+    rotatable = False
+    return(movable_x, movable_y, rotatable)
+
+def generator_up_cell():
+    cell_id = 10
+    movable_x = True
+    movable_y = True
+    rotatable = True
+    return(movable_x, movable_y, rotatable)
+
+def generator_down_cell():
+    cell_id = 11
+    movable_x = True
+    movable_y = True
+    rotatable = True
+    return(movable_x, movable_y, rotatable)
+
+def generator_left_cell():
+    cell_id = 12
+    movable_x = True
+    movable_y = True
+    rotatable = True
+    return(movable_x, movable_y, rotatable)
+
+def generator_right_cell():
+    cell_id = 13
+    movable_x = True
+    movable_y = True
+    rotatable = True
+    return(movable_x, movable_y, rotatable)
+
 
 def gen(num):
     return set([(random.randrange(0, GRID_HEIGHT), random.randrange(0, GRID_WIDTH)) for _ in range(num)])
@@ -39,7 +144,6 @@ def adjust_grid(positions):
     for position in positions:
         neighbors = get_neighbors(position)
         all_neighbors.update(neighbors)
-
         neighbors = list(filter(lambda x: x in positions, neighbors))
 
         if len(neighbors) == 2 or len(neighbors) == 3:
@@ -71,14 +175,14 @@ def get_neighbors(pos):
     return neighbors
 
 def main():
-    running = True
+    window_running = True
     sim_running = False
     count = 0
     update_freq = FPS * 0.1
 
     positions = set()
 
-    while running:
+    while window_running:
         clock.tick(FPS)
 
         if sim_running:
@@ -92,7 +196,7 @@ def main():
 
         for event in py.event.get():
             if event.type == py.QUIT:
-                running = False
+                window_running = False
             
             if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
                 x, y = py.mouse.get_pos()
