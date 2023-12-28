@@ -25,7 +25,9 @@ clock = py.time.Clock()
 
 
 def cell_properties(cell_id):
-    if cell_id == 1: # Wall Cell
+    if cell_id == 0: #Empty Cell
+        return None
+    elif cell_id == 1: # Wall Cell
         return {'movable_x': False, 'movable_y': False, 'rotatable': False}
     elif cell_id == 2: # Blank Cell
         return {'movable_x': True, 'movable_y': True, 'rotatable': False}
@@ -53,15 +55,29 @@ def cell_properties(cell_id):
         return {'movable_x': True, 'movable_y': True, 'rotatable': True}
     elif cell_id == 14: # Generator Right Cell
         return {'movable_x': True, 'movable_y': True, 'rotatable': True}
-   
+
+grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+
 def gen(num):
     return set([(random.randrange(0, GRID_HEIGHT), random.randrange(0, GRID_WIDTH)) for _ in range(num)])
 
-def draw_grid(positions):
-    for position in positions:
-        col, row = position
-        top_left = (col * TILE_SIZE, row * TILE_SIZE)
-        py.draw.rect(screen, YELLOW, (*top_left, TILE_SIZE, TILE_SIZE))
+def draw_grid(grid):
+    for row in range(GRID_HEIGHT):
+        for col in range(GRID_WIDTH):
+            cell_id = grid[row][col]
+
+            color = YELLOW  # Default color for non-empty cells
+
+            if cell_id == 0:
+                continue
+            elif cell_id == 1:
+                color = GREY
+            elif cell_id == 2:
+                color = YELLOW
+            # ... Add more conditions for other cell types
+
+            top_left = (col * TILE_SIZE, row * TILE_SIZE)
+            py.draw.rect(screen, color, (*top_left, TILE_SIZE, TILE_SIZE))
 
     for row in range(GRID_HEIGHT):
         py.draw.line(screen, GREY, (0, row * TILE_SIZE), (WIDTH, row * TILE_SIZE))
@@ -69,50 +85,30 @@ def draw_grid(positions):
     for col in range(GRID_WIDTH):
         py.draw.line(screen, GREY, (col * TILE_SIZE, 0), (col * TILE_SIZE, HEIGHT))
 
-def adjust_grid(positions):
-    all_neighbors = set()
-    new_positions = set()
+def adjust_grid():
+    pass
 
-    for position in positions:
-        neighbors = get_neighbors(position)
-        all_neighbors.update(neighbors)
-        neighbors = list(filter(lambda x: x in positions, neighbors))
+#def get_neighbors(pos):         could potentially be useful for rotation
+#    x, y = pos
+#    neighbors = []
+#    for dx in [-1, 0, 1]:
+#        if x + dx < 0 or x + dx > GRID_WIDTH:
+#            continue
+#        for dy in [-1, 0, 1]:
+#            if y + dy < 0 or y + dy > GRID_HEIGHT:
+#                continue
+#            if dx == 0 and dy == 0:
+#                continue
+#            
+#            neighbors.append((x + dx, y + dy))
 
-        if len(neighbors) == 2 or len(neighbors) == 3:
-            new_positions.add(position)
-    
-    for position in all_neighbors:
-        neighbors = get_neighbors(position)
-        neighbors = list(filter(lambda x: x in positions, neighbors))
-
-        if len(neighbors) == 3:
-            new_positions.add(position)
-
-    return new_positions
-
-def get_neighbors(pos):
-    x, y = pos
-    neighbors = []
-    for dx in [-1, 0, 1]:
-        if x + dx < 0 or x + dx > GRID_WIDTH:
-            continue
-        for dy in [-1, 0, 1]:
-            if y + dy < 0 or y + dy > GRID_HEIGHT:
-                continue
-            if dx == 0 and dy == 0:
-                continue
-            
-            neighbors.append((x + dx, y + dy))
-
-    return neighbors
+#    return neighbors
 
 def main():
     window_running = True
     sim_running = False
     count = 0
     update_freq = FPS * 0.1
-
-    positions = set()
 
     while window_running:
         clock.tick(FPS)
@@ -122,7 +118,7 @@ def main():
 
         if count >= update_freq:
             count = 0
-            positions = adjust_grid(positions)
+            adjust_grid()
 
         py.display.set_caption("Playing" if sim_running else "Paused")
 
@@ -130,33 +126,18 @@ def main():
             if event.type == py.QUIT:
                 window_running = False
             
-            if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
-                x, y = py.mouse.get_pos()
-                col = x // TILE_SIZE
-                row = y // TILE_SIZE
-                pos = (col, row)
-
-                if pos in positions:
-                    positions.remove(pos)
-                else:
-                    positions.add(pos)
-
             if event.type == py.KEYDOWN:
                 if event.key == py.K_SPACE:
                     sim_running = not sim_running
                 
                 if event.key == py.K_c:
-                    positions = set()
+                    grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
                     sim_running = False
                     count = 0
                 
-                if event.key == py.K_g:
-                    positions = gen(random.randrange(2, 20) * GRID_WIDTH)
-                
-
     
         screen.fill(BLACK)
-        draw_grid(positions)
+        draw_grid(grid)
         py.display.update()   
    
     py.quit()
