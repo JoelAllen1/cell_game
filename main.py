@@ -12,6 +12,10 @@ py.init()
 BLACK = (0, 0, 0)
 GREY = (128, 128, 128)
 YELLOW = (255, 255, 0)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+ORANGE = (255, 165, 0)
 
 WIDTH, HEIGHT = 800, 800
 TILE_SIZE = 20
@@ -66,18 +70,25 @@ def draw_grid(grid):
         for col in range(GRID_WIDTH):
             cell_id = grid[row][col]
 
-            color = YELLOW  # Default color for non-empty cells
+            colour = None
 
             if cell_id == 0:
                 continue
             elif cell_id == 1:
-                color = GREY
+                colour = GREY
             elif cell_id == 2:
-                color = YELLOW
-            # ... Add more conditions for other cell types
+                colour = YELLOW
+            elif cell_id == 3 or cell_id == 4:
+                colour = ORANGE
+            elif cell_id == 5 or cell_id == 6 or cell_id == 7 or cell_id == 8:
+                colour = BLUE
+            elif cell_id == 9 or cell_id == 10:
+                colour = RED
+            elif cell_id == 11 or cell_id == 12 or cell_id == 13 or cell_id == 14:
+                colour = GREEN
 
             top_left = (col * TILE_SIZE, row * TILE_SIZE)
-            py.draw.rect(screen, color, (*top_left, TILE_SIZE, TILE_SIZE))
+            py.draw.rect(screen, colour, (*top_left, TILE_SIZE, TILE_SIZE))
 
     for row in range(GRID_HEIGHT):
         py.draw.line(screen, GREY, (0, row * TILE_SIZE), (WIDTH, row * TILE_SIZE))
@@ -86,7 +97,10 @@ def draw_grid(grid):
         py.draw.line(screen, GREY, (col * TILE_SIZE, 0), (col * TILE_SIZE, HEIGHT))
 
 def adjust_grid():
-    pass
+    global grid
+    updated_grid = [[None for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+
+    return (updated_grid)
 
 #def get_neighbors(pos):         could potentially be useful for rotation
 #    x, y = pos
@@ -105,6 +119,7 @@ def adjust_grid():
 #    return neighbors
 
 def main():
+    global grid
     window_running = True
     sim_running = False
     count = 0
@@ -118,7 +133,7 @@ def main():
 
         if count >= update_freq:
             count = 0
-            adjust_grid()
+            grid = adjust_grid()
 
         py.display.set_caption("Playing" if sim_running else "Paused")
 
