@@ -61,6 +61,11 @@ def cell_properties(cell_id):
         return {'movable_x': True, 'movable_y': True, 'rotatable': True}
 
 grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+grid[21][20] = 5
+grid[19][20] = 2
+grid[17][20] = 2
+grid[10][20] = 1
+grid[11][10] = 5
 
 def gen(num):
     return set([(random.randrange(0, GRID_HEIGHT), random.randrange(0, GRID_WIDTH)) for _ in range(num)])
@@ -98,9 +103,37 @@ def draw_grid(grid):
 
 def adjust_grid():
     global grid
-    updated_grid = [[None for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+    temp_grid = grid
+    for row in range(GRID_HEIGHT):
+        for col in range(GRID_WIDTH):
+            cell_id = temp_grid[row][col]
 
-    return (updated_grid)
+            if cell_id == 5: #pusher up cell
+                run = True
+                y = 0
+                list_cell = [cell_id]
+
+                while run:
+                    check_id = temp_grid[row - y][col]
+                    
+                    if check_id == 0:
+                        run = False
+                    
+                    elif cell_properties(check_id)['movable_y'] == False:
+                        run = False
+                        list_cell = []
+                    else:
+                        list_cell.append(check_id)
+                        y += 1
+                
+                while list_cell:
+                    temp_grid[row - (y - 1)][col] = 0
+                    temp_grid[row - y][col] = list_cell[-1]
+                    y -= 1
+                    list_cell.pop()
+                    temp_grid[row][col] = 0
+
+    return (temp_grid)
 
 #def get_neighbors(pos):         could potentially be useful for rotation
 #    x, y = pos
@@ -123,7 +156,7 @@ def main():
     window_running = True
     sim_running = False
     count = 0
-    update_freq = FPS * 0.1
+    update_freq = FPS * 0.2
 
     while window_running:
         clock.tick(FPS)
