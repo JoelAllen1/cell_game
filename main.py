@@ -6,6 +6,7 @@
 
 import pygame as py
 import random
+import copy
 
 py.init()
 
@@ -65,7 +66,9 @@ grid[21][20] = 5
 grid[19][20] = 2
 grid[17][20] = 2
 grid[10][20] = 1
-grid[11][10] = 5
+grid[11][10] = 6
+grid[12][10] = 2
+grid[21][10] = 1
 
 def gen(num):
     return set([(random.randrange(0, GRID_HEIGHT), random.randrange(0, GRID_WIDTH)) for _ in range(num)])
@@ -103,7 +106,7 @@ def draw_grid(grid):
 
 def adjust_grid():
     global grid
-    temp_grid = grid
+    temp_grid = copy.deepcopy(grid)
     for row in range(GRID_HEIGHT):
         for col in range(GRID_WIDTH):
             cell_id = temp_grid[row][col]
@@ -111,7 +114,7 @@ def adjust_grid():
             if cell_id == 5: #pusher up cell
                 run = True
                 y = 0
-                list_cell = [cell_id]
+                list_cell = []
 
                 while run:
                     check_id = temp_grid[row - y][col]
@@ -127,13 +130,60 @@ def adjust_grid():
                         y += 1
                 
                 while list_cell:
-                    temp_grid[row - (y - 1)][col] = 0
-                    temp_grid[row - y][col] = list_cell[-1]
+                    grid[row - y][col] = list_cell[-1]
                     y -= 1
                     list_cell.pop()
-                    temp_grid[row][col] = 0
+                    grid[row][col] = 0
+            
+            if cell_id == 6: #pusher down cell
+                run = True
+                y = 0
+                list_cell = []
 
-    return (temp_grid)
+                while run:
+                    check_id = temp_grid[row + y][col]
+                    
+                    if check_id == 0:
+                        run = False
+                    
+                    elif cell_properties(check_id)['movable_y'] == False:
+                        run = False
+                        list_cell = []
+                    else:
+                        list_cell.append(check_id)
+                        y += 1
+                
+                while list_cell:
+                    grid[row + y][col] = list_cell[-1]
+                    y -= 1
+                    list_cell.pop()
+                    grid[row][col] = 0
+            
+            if cell_id == 7: #pusher left cell
+                run = True
+                x = 0
+                list_cell = []
+
+                while run:
+                    check_id = temp_grid[row][col - x]
+                    
+                    if check_id == 0:
+                        run = False
+                    
+                    elif cell_properties(check_id)['movable_y'] == False:
+                        run = False
+                        list_cell = []
+                    else:
+                        list_cell.append(check_id)
+                        y += 1
+                
+                while list_cell:
+                    grid[row][col - x] = list_cell[-1]
+                    y -= 1
+                    list_cell.pop()
+                    grid[row][col] = 0
+
+    return (grid)
 
 #def get_neighbors(pos):         could potentially be useful for rotation
 #    x, y = pos
