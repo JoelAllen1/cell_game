@@ -62,13 +62,11 @@ def cell_properties(cell_id):
         return {'movable_x': True, 'movable_y': True, 'rotatable': True}
 
 grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-grid[21][20] = 5
-grid[19][20] = 2
-grid[17][20] = 2
-grid[10][20] = 1
-grid[11][10] = 6
-grid[12][10] = 2
-grid[21][10] = 1
+grid[20][20] = 4
+grid[20][19] = 8
+grid[21][30] = 2
+grid[21][31] = 7
+grid[21][29] = 9
 
 def gen(num):
     return set([(random.randrange(0, GRID_HEIGHT), random.randrange(0, GRID_WIDTH)) for _ in range(num)])
@@ -135,7 +133,7 @@ def adjust_grid():
                     list_cell.pop()
                     grid[row][col] = 0
             
-            if cell_id == 6: #pusher down cell
+            elif cell_id == 6: #pusher down cell
                 run = True
                 y = 0
                 list_cell = []
@@ -157,9 +155,9 @@ def adjust_grid():
                     grid[row + y][col] = list_cell[-1]
                     y -= 1
                     list_cell.pop()
-                    grid[row][col] = 0
+                    grid[row][col] = 0         
             
-            if cell_id == 7: #pusher left cell
+            elif cell_id == 7: #pusher left cell
                 run = True
                 x = 0
                 list_cell = []
@@ -170,43 +168,100 @@ def adjust_grid():
                     if check_id == 0:
                         run = False
                     
-                    elif cell_properties(check_id)['movable_y'] == False:
+                    elif cell_properties(check_id)['movable_x'] == False:
                         run = False
                         list_cell = []
                     else:
                         list_cell.append(check_id)
-                        y += 1
+                        x += 1
                 
                 while list_cell:
                     grid[row][col - x] = list_cell[-1]
-                    y -= 1
+                    x -= 1
                     list_cell.pop()
                     grid[row][col] = 0
 
+            elif cell_id == 8: #pusher right cell
+                run = True
+                x = 0
+                list_cell = []
+
+                while run:
+                    check_id = temp_grid[row][col + x]
+                    
+                    if check_id == 0:
+                        run = False
+                    
+                    elif cell_properties(check_id)['movable_x'] == False:
+                        run = False
+                        list_cell = []
+                    else:
+                        list_cell.append(check_id)
+                        x += 1
+                
+                while list_cell:
+                    grid[row][col + x] = list_cell[-1]
+                    x -= 1
+                    list_cell.pop()
+                    grid[row][col] = 0      
+
+
+            elif cell_id == 9: #rotator clockwise cell
+                above_id = temp_grid[row - 1][col]
+                below_id = temp_grid[row + 1][col]
+                left_id = temp_grid[row][col - 1]
+                right_id = temp_grid[row][col + 1]
+
+                rotation_mapping = {
+                    3: 4, # blank x to y
+                    4: 3, # blank y to x
+                    
+                    5: 8, # pusher up to right
+                    8: 6, # pusher right to down
+                    6: 7, # pusher down to left
+                    7: 5, # pusher left to up
+
+                    11: 14, # generator up to right
+                    14: 12, # generator right to down
+                    12: 13, # generator down to left
+                    13: 11  # generator left to up
+                }
+
+                # Rotate the neighboring cells
+                temp_grid[row - 1][col] = rotation_mapping.get(above_id, above_id)
+                temp_grid[row + 1][col] = rotation_mapping.get(below_id, below_id)
+                temp_grid[row][col - 1] = rotation_mapping.get(left_id, left_id)
+                temp_grid[row][col + 1] = rotation_mapping.get(right_id, right_id)
+            
+            elif cell_id == 10: #rotator anticlockwise cell
+                above_id = temp_grid[row - 1][col]
+                below_id = temp_grid[row + 1][col]
+                left_id = temp_grid[row][col - 1]
+                right_id = temp_grid[row][col + 1]
+
+                rotation_mapping = {
+                    3: 4, # blank x to y
+                    4: 3, # blank y to x
+                    
+                    5: 7, # pusher up to left
+                    7: 6, # pusher left to down
+                    6: 8, # pusher down to right
+                    8: 5, # pusher left to up
+
+                    11: 13, # generator up to left
+                    13: 12, # generator left to down
+                    12: 14, # generator down to right
+                    14: 11  # generator right to up
+                }
     return (grid)
 
-#def get_neighbors(pos):         could potentially be useful for rotation
-#    x, y = pos
-#    neighbors = []
-#    for dx in [-1, 0, 1]:
-#        if x + dx < 0 or x + dx > GRID_WIDTH:
-#            continue
-#        for dy in [-1, 0, 1]:
-#            if y + dy < 0 or y + dy > GRID_HEIGHT:
-#                continue
-#            if dx == 0 and dy == 0:
-#                continue
-#            
-#            neighbors.append((x + dx, y + dy))
-
-#    return neighbors
 
 def main():
     global grid
     window_running = True
     sim_running = False
     count = 0
-    update_freq = FPS * 0.2
+    update_freq = FPS * 0.5
 
     while window_running:
         clock.tick(FPS)
