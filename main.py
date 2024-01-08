@@ -62,11 +62,8 @@ def cell_properties(cell_id):
         return {'movable_x': True, 'movable_y': True, 'rotatable': True}
 
 grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-grid[20][20] = 4
-grid[20][19] = 8
-grid[21][30] = 2
-grid[21][31] = 7
-grid[21][29] = 9
+grid[20][20] = 6
+grid[30][20] = 5
 
 def gen(num):
     return set([(random.randrange(0, GRID_HEIGHT), random.randrange(0, GRID_WIDTH)) for _ in range(num)])
@@ -120,7 +117,7 @@ def adjust_grid():
                     if check_id == 0:
                         run = False
                     
-                    elif cell_properties(check_id)['movable_y'] == False:
+                    elif (cell_properties(check_id)['movable_y'] == False) or (check_id == 6):
                         run = False
                         list_cell = []
                     else:
@@ -144,7 +141,7 @@ def adjust_grid():
                     if check_id == 0:
                         run = False
                     
-                    elif cell_properties(check_id)['movable_y'] == False:
+                    elif (cell_properties(check_id)['movable_y'] == False) or (check_id == 5):
                         run = False
                         list_cell = []
                     else:
@@ -168,7 +165,7 @@ def adjust_grid():
                     if check_id == 0:
                         run = False
                     
-                    elif cell_properties(check_id)['movable_x'] == False:
+                    elif (cell_properties(check_id)['movable_x'] == False) or (check_id == 8):
                         run = False
                         list_cell = []
                     else:
@@ -192,7 +189,7 @@ def adjust_grid():
                     if check_id == 0:
                         run = False
                     
-                    elif cell_properties(check_id)['movable_x'] == False:
+                    elif (cell_properties(check_id)['movable_x'] == False) or (check_id == 9):
                         run = False
                         list_cell = []
                     else:
@@ -213,6 +210,12 @@ def adjust_grid():
                 right_id = temp_grid[row][col + 1]
 
                 rotation_mapping = {
+                    0:0, # Empty
+                    1:1, # Wall
+                    2:2, # Blank
+                    9:9, # Rotator
+                    10:10, # Rotator
+                    
                     3: 4, # blank x to y
                     4: 3, # blank y to x
                     
@@ -228,10 +231,10 @@ def adjust_grid():
                 }
 
                 # Rotate the neighboring cells
-                temp_grid[row - 1][col] = rotation_mapping.get(above_id, above_id)
-                temp_grid[row + 1][col] = rotation_mapping.get(below_id, below_id)
-                temp_grid[row][col - 1] = rotation_mapping.get(left_id, left_id)
-                temp_grid[row][col + 1] = rotation_mapping.get(right_id, right_id)
+                temp_grid[row - 1][col] = rotation_mapping[above_id]
+                temp_grid[row + 1][col] = rotation_mapping[below_id]
+                temp_grid[row][col - 1] = rotation_mapping[left_id]
+                temp_grid[row][col + 1] = rotation_mapping[right_id]
             
             elif cell_id == 10: #rotator anticlockwise cell
                 above_id = temp_grid[row - 1][col]
@@ -240,6 +243,12 @@ def adjust_grid():
                 right_id = temp_grid[row][col + 1]
 
                 rotation_mapping = {
+                    0:0, # Empty
+                    1:1, # Wall
+                    2:2, # Blank
+                    9:9, # Rotator
+                    10:10, # Rotator
+                    
                     3: 4, # blank x to y
                     4: 3, # blank y to x
                     
@@ -253,6 +262,12 @@ def adjust_grid():
                     12: 14, # generator down to right
                     14: 11  # generator right to up
                 }
+
+                # Rotate the neighboring cells
+                temp_grid[row - 1][col] = rotation_mapping[above_id]
+                temp_grid[row + 1][col] = rotation_mapping[below_id]
+                temp_grid[row][col - 1] = rotation_mapping[left_id]
+                temp_grid[row][col + 1] = rotation_mapping[right_id]
     return (grid)
 
 
