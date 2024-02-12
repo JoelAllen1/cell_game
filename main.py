@@ -30,45 +30,33 @@ clock = py.time.Clock()
 
 
 def cell_properties(cell_id):
-    if cell_id == 0: #Empty Cell
-        return None
-    elif cell_id == 1: # Wall Cell
+    if cell_id == 0:  # Empty Cell
+        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+    elif cell_id == 1:  # Wall Cell
         return {'movable_x': False, 'movable_y': False, 'rotatable': False}
-    elif cell_id == 2: # Blank Cell
+    elif cell_id == 2:  # Blank Cell
         return {'movable_x': True, 'movable_y': True, 'rotatable': False}
-    elif cell_id == 3: # Blank X Cell
+    elif cell_id == 3:  # Blank X Cell
         return {'movable_x': True, 'movable_y': False, 'rotatable': True}
-    elif cell_id == 4: # Blank Y Cell
+    elif cell_id == 4:  # Blank Y Cell
         return {'movable_x': False, 'movable_y': True, 'rotatable': True}
-    elif cell_id == 5: # Pusher Up Cell
+    elif cell_id in (5, 6, 7, 8, 9, 10, 11, 12, 13, 14):  # Every Other Cell
         return {'movable_x': True, 'movable_y': True, 'rotatable': True}
-    elif cell_id == 6: # Pusher Down Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
-    elif cell_id == 7: # Pusher Left Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
-    elif cell_id == 8: # Pusher Right Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
-    elif cell_id == 9: # Rotator Clockwise Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': False}
-    elif cell_id == 10: # Rotator Anticlockwise Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': False}
-    elif cell_id == 11: # Generator Up Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
-    elif cell_id == 12: # Generator Down Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
-    elif cell_id == 13: # Generator Left Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
-    elif cell_id == 14: # Generator Right Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+    else:  # Default case for undefined cell_ids
+        return {}
+
+
 
 grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-grid[20][20] = 6
-grid[30][20] = 5
+grid[20][20] = 2
+grid[10][20] = 6
+
 
 def gen(num):
     return set([(random.randrange(0, GRID_HEIGHT), random.randrange(0, GRID_WIDTH)) for _ in range(num)])
 
-def draw_grid(grid):
+def draw_grid():
+    global grid
     for row in range(GRID_HEIGHT):
         for col in range(GRID_WIDTH):
             cell_id = grid[row][col]
@@ -100,6 +88,72 @@ def draw_grid(grid):
         py.draw.line(screen, GREY, (col * TILE_SIZE, 0), (col * TILE_SIZE, HEIGHT))
 
 def adjust_grid():
+    global grid
+
+    for ID in range(5, 15):
+        if ID <= 8 and ID >= 5:
+            grid = pusher(ID)  # Pass the updated grid
+        elif ID == 9 or ID == 10:
+            pass  # rotator subroutine
+        elif ID >= 11 and ID <= 14:
+            pass  # generator subroutine
+
+    return grid  # Return the updated grid
+
+
+def pusher(ID):
+    global grid
+    temp_grid = [row[:] for row in grid]  # Create a new grid to avoid modifying the original during iteration
+
+    directions = {
+        5: (-1, 0),  # pusher up cell
+        6: (1, 0),   # pusher down cell
+        7: (0, -1),  # pusher left cell
+        8: (0, 1),   # pusher right cell
+        }
+
+    if ID not in directions:
+        print("Unexpected value received: pusher subroutine")
+        return grid
+
+    sy, sx = directions[ID]
+
+    for row in range(GRID_HEIGHT):
+        for col in range(GRID_WIDTH):
+            cell_id = temp_grid[row][col]
+
+            if cell_id == ID:  # Check against the specified ID
+                run = True
+                y = 0
+                list_cell = []
+
+                while run:
+                    check_id = temp_grid[row + y*sy][col + y*sx]
+
+                    if check_id == 0:
+                        run = False
+                    elif (cell_properties(check_id)['movable_y'] == False) or (check_id == 6):
+                        run = False
+                        list_cell = []
+                    else:
+                        list_cell.append(check_id)
+                        y += 1
+
+                while list_cell:
+                    temp_grid[row + y*sy][col + y*sx] = list_cell[-1]
+                    y -= 1
+                    list_cell.pop()
+                    temp_grid[row][col] = 0
+
+    return temp_grid  # Return the modified grid
+
+
+
+
+
+
+
+def adjust_grid_deprecated():
     global grid
     temp_grid = copy.deepcopy(grid)
     for row in range(GRID_HEIGHT):
@@ -158,7 +212,7 @@ def adjust_grid():
                 run = True
                 x = 0
                 list_cell = []
-
+                sy = 0
                 while run:
                     check_id = temp_grid[row][col - x]
                     
@@ -305,10 +359,12 @@ def main():
                 
     
         screen.fill(BLACK)
-        draw_grid(grid)
+        draw_grid()
         py.display.update()   
    
     py.quit()
 
 if __name__ == "__main__":
     main()
+
+print("boi")
