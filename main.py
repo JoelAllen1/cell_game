@@ -1,9 +1,3 @@
-### planning ###
-# all cells will be movable before play starts including walls but the editing area will not include walls i dont want the player to move
-
-
-
-
 import pygame as py
 import random
 import copy
@@ -31,25 +25,28 @@ clock = py.time.Clock()
 
 def cell_properties(cell_id):
     if cell_id == 0:  # Empty Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+        return {'movable_x': True, 'movable_y': True}
     elif cell_id == 1:  # Wall Cell
-        return {'movable_x': False, 'movable_y': False, 'rotatable': False}
+        return {'movable_x': False, 'movable_y': False}
     elif cell_id == 2:  # Blank Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': False}
+        return {'movable_x': True, 'movable_y': True}
     elif cell_id == 3:  # Blank X Cell
-        return {'movable_x': True, 'movable_y': False, 'rotatable': True}
+        return {'movable_x': True, 'movable_y': False}
     elif cell_id == 4:  # Blank Y Cell
-        return {'movable_x': False, 'movable_y': True, 'rotatable': True}
+        return {'movable_x': False, 'movable_y': True}
     elif cell_id in (5, 6, 7, 8, 9, 10, 11, 12, 13, 14):  # Every Other Cell
-        return {'movable_x': True, 'movable_y': True, 'rotatable': True}
+        return {'movable_x': True, 'movable_y': True}
     else:  # Default case for undefined cell_ids
         return {}
 
 
 
 grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-grid[20][20] = 2
-grid[10][20] = 6
+grid[20][20] = 3
+grid[30][20] = 5
+grid[19][36] = 7
+grid[19][35] = 4
+grid[19][34] = 9
 
 
 def gen(num):
@@ -92,47 +89,45 @@ def adjust_grid():
 
     for ID in range(5, 15):
         if ID <= 8 and ID >= 5:
-            grid = pusher(ID)  # Pass the updated grid
+            grid = pusher(ID)
         elif ID == 9 or ID == 10:
-            pass  # rotator subroutine
+            grid = rotator(ID)
         elif ID >= 11 and ID <= 14:
             pass  # generator subroutine
 
-    return grid  # Return the updated grid
-
+    return grid
 
 def pusher(ID):
     global grid
     temp_grid = [row[:] for row in grid]  # Create a new grid to avoid modifying the original during iteration
 
     directions = {
-        5: (-1, 0),  # pusher up cell
-        6: (1, 0),   # pusher down cell
-        7: (0, -1),  # pusher left cell
-        8: (0, 1),   # pusher right cell
+        5: (-1, 0, 6, 'movable_y'),  # pusher up cell
+        6: (1, 0, 5, 'movable_y'),   # pusher down cell
+        7: (0, -1, 8, 'movable_x'),  # pusher left cell
+        8: (0, 1, 7, 'movable_x'),   # pusher right cell
         }
 
     if ID not in directions:
         print("Unexpected value received: pusher subroutine")
         return grid
 
-    sy, sx = directions[ID]
-
+    sy, sx, opp_id, movable = directions[ID]
+    
     for row in range(GRID_HEIGHT):
         for col in range(GRID_WIDTH):
-            cell_id = temp_grid[row][col]
-
+            cell_id = grid[row][col]
             if cell_id == ID:  # Check against the specified ID
                 run = True
                 y = 0
                 list_cell = []
 
                 while run:
-                    check_id = temp_grid[row + y*sy][col + y*sx]
+                    check_id = grid[row + y*sy][col + y*sx]
 
                     if check_id == 0:
                         run = False
-                    elif (cell_properties(check_id)['movable_y'] == False) or (check_id == 6):
+                    elif (cell_properties(check_id)[movable] == False) or (check_id == opp_id):
                         run = False
                         list_cell = []
                     else:
@@ -147,8 +142,70 @@ def pusher(ID):
 
     return temp_grid  # Return the modified grid
 
+def rotator(ID):
+    global grid
+    temp_grid = [row[:] for row in grid]  # Create a new grid to avoid modifying the original during iteration
 
+    rotation_mapping_clockwise = {
+                    0:0, # Empty
+                    1:1, # Wall
+                    2:2, # Blank
+                    9:9, # Rotator
+                    10:10, # Rotator
+                    
+                    3: 4, # blank x to y
+                    4: 3, # blank y to x
+                    
+                    5: 8, # pusher up to right
+                    8: 6, # pusher right to down
+                    6: 7, # pusher down to left
+                    7: 5, # pusher left to up
 
+                    11: 14, # generator up to right
+                    14: 12, # generator right to down
+                    12: 13, # generator down to left
+                    13: 11  # generator left to up
+                }
+
+    rotation_mapping_anticlockwise = {
+                    0:0, # Empty
+                    1:1, # Wall
+                    2:2, # Blank
+                    9:9, # Rotator
+                    10:10, # Rotator
+                    
+                    3: 4, # blank x to y
+                    4: 3, # blank y to x
+                    
+                    5: 7, # pusher up to left
+                    7: 6, # pusher left to down
+                    6: 8, # pusher down to right
+                    8: 5, # pusher left to up
+
+                    11: 13, # generator up to left
+                    13: 12, # generator left to down
+                    12: 14, # generator down to right
+                    14: 11  # generator right to up
+                }
+    
+    if ID not in rotation_mapping_clockwise and rotation_mapping_anticlockwise:
+        print("Unexpected value received: rotator subroutine")
+        return grid
+
+    if ID == 9:
+        rotation_mapping = rotation_mapping_clockwise
+    elif ID == 10:
+        rotation_mapping = rotation_mapping_anticlockwise
+
+    for row in range(GRID_HEIGHT):
+        for col in range(GRID_WIDTH):
+            cell_id = grid[row][col]
+            if cell_id == ID:  # Check against the specified ID
+                temp_grid[row - 1][col] = rotation_mapping[temp_grid[row - 1][col]]
+                temp_grid[row + 1][col] = rotation_mapping[temp_grid[row + 1][col]]
+                temp_grid[row][col - 1] = rotation_mapping[temp_grid[row][col - 1]]
+                temp_grid[row][col + 1] = rotation_mapping[temp_grid[row][col + 1]]
+    return temp_grid
 
 
 
@@ -366,5 +423,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-print("boi")
