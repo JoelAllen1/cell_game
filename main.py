@@ -1,17 +1,13 @@
 import pygame as py
+import pathlib
 
 py.init()
 
 BLACK = (0, 0, 0)
 GREY = (128, 128, 128)
-YELLOW = (255, 255, 0)
-BLUE = (0, 0, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-ORANGE = (255, 165, 0)
 
 WIDTH, HEIGHT = 800, 800
-TILE_SIZE = 20
+TILE_SIZE = 25
 GRID_WIDTH = WIDTH // TILE_SIZE
 GRID_HEIGHT = HEIGHT // TILE_SIZE
 FPS = 60
@@ -19,6 +15,72 @@ FPS = 60
 screen = py.display.set_mode((WIDTH, HEIGHT))
 
 clock = py.time.Clock()
+
+
+IMAGE_DIR = pathlib.Path(__file__).parent/'images'
+
+cell_images = {
+    1: py.image.load(IMAGE_DIR / 'Wall.png'),
+    2: py.image.load(IMAGE_DIR / 'Blank4.png'),
+    3: py.image.load(IMAGE_DIR / 'BlankX.png'),
+    4: py.image.load(IMAGE_DIR / 'BlankY.png'),
+    5: py.image.load(IMAGE_DIR / 'PusherUp.png'),
+    6: py.image.load(IMAGE_DIR / 'PusherDown.png'),
+    7: py.image.load(IMAGE_DIR / 'PusherLeft.png'),
+    8: py.image.load(IMAGE_DIR / 'PusherRight.png'),
+    9: py.image.load(IMAGE_DIR / 'GeneratorUp.png'),
+    10: py.image.load(IMAGE_DIR / 'GeneratorDown.png'),
+    11: py.image.load(IMAGE_DIR / 'GeneratorLeft.png'),
+    12: py.image.load(IMAGE_DIR / 'GeneratorRight.png'),
+    13: py.image.load(IMAGE_DIR / 'RotatorClockwise.png'),
+    14: py.image.load(IMAGE_DIR / 'RotatorAnticlockwise.png')
+}
+
+
+#Scale images to fit the size of the grid
+for i in cell_images:
+    cell_images[i] = py.transform.scale(cell_images[i], (TILE_SIZE, TILE_SIZE))
+
+grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+
+# Set the borders to wall cells
+for col in range(GRID_WIDTH):
+    grid[0][col] = 1
+    grid[GRID_HEIGHT - 1][col] = 1
+
+for row in range(GRID_HEIGHT):
+    grid[row][0] = 1
+    grid[row][GRID_WIDTH - 1] = 1
+
+
+grid[5][5] = 8
+grid[6][5] = 8
+grid[5][6] = 6
+grid[6][6] = 3
+grid[5][7] = 12
+
+
+def draw_grid():
+    global grid
+    screen.fill(BLACK)
+
+    for row in range(GRID_HEIGHT):
+        for col in range(GRID_WIDTH):
+            cell_id = grid[row][col]
+
+            if cell_id in cell_images:
+                screen.blit(cell_images[cell_id], (col * TILE_SIZE, row * TILE_SIZE))
+            else:
+                # Handle the case where the cell_id does not have an associated image
+                py.draw.rect(screen, (0, 0, 0), (col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+
+    for row in range(GRID_HEIGHT):
+        py.draw.line(screen, GREY, (0, row * TILE_SIZE), (WIDTH, row * TILE_SIZE))
+
+    for col in range(GRID_WIDTH):
+        py.draw.line(screen, GREY, (col * TILE_SIZE, 0), (col * TILE_SIZE, HEIGHT))
+    
+    py.display.update()   
 
 
 def cell_properties(cell_id):
@@ -37,48 +99,6 @@ def cell_properties(cell_id):
     else:  # Default case for undefined cell_ids
         return {}
 
-grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-
-grid[20][10] = 8
-grid[21][10] = 8
-grid[20][11] = 6
-grid[21][11] = 3
-grid[20][12] = 12
-
-
-
-def draw_grid():
-    global grid
-    for row in range(GRID_HEIGHT):
-        for col in range(GRID_WIDTH):
-            cell_id = grid[row][col]
-
-            colour = None
-
-            if cell_id == 0:
-                continue
-            elif cell_id == 1:
-                colour = GREY
-            elif cell_id == 2:
-                colour = YELLOW
-            elif cell_id == 3 or cell_id == 4:
-                colour = ORANGE
-            elif cell_id == 5 or cell_id == 6 or cell_id == 7 or cell_id == 8:
-                colour = BLUE
-            elif cell_id == 9 or cell_id == 10 or cell_id == 11 or cell_id == 12:
-                colour = GREEN
-            elif cell_id == 13 or cell_id == 14:
-                colour = RED
-
-            top_left = (col * TILE_SIZE, row * TILE_SIZE)
-            py.draw.rect(screen, colour, (*top_left, TILE_SIZE, TILE_SIZE))
-
-    for row in range(GRID_HEIGHT):
-        py.draw.line(screen, GREY, (0, row * TILE_SIZE), (WIDTH, row * TILE_SIZE))
-
-    for col in range(GRID_WIDTH):
-        py.draw.line(screen, GREY, (col * TILE_SIZE, 0), (col * TILE_SIZE, HEIGHT))
-
 
 def adjust_grid():
     global grid
@@ -94,7 +114,6 @@ def adjust_grid():
 
     return grid
 
-
 def pusher(ID): 
     global grid
     temp_grid = [row[:] for row in grid]  # Create a new grid to avoid modifying the original during iteration
@@ -106,13 +125,9 @@ def pusher(ID):
         8: (0, 1, 7, 'movable_x'),   # pusher right cell
     }
 
-    if ID not in directions:
-        print("Unexpected value received: pusher subroutine")
-        return grid
-
     sy, sx, opp_id, movable = directions[ID]
     
-    # Determine the range of iteration based on direction
+    # Determine the direction of iteration based on direction of pusher cell
     if sy == -1 or sx == -1:  # pusher up/left
         row_range = range(GRID_HEIGHT)
         col_range = range(GRID_WIDTH)
@@ -149,8 +164,6 @@ def pusher(ID):
                     temp_grid[row][col] = 0
 
     return temp_grid  # Return the modified grid
-
-
 
 def generator(ID):
     global grid
@@ -199,7 +212,6 @@ def generator(ID):
 
     return temp_grid  # Return the modified grid
 
-
 def rotator(ID):
     global grid
     temp_grid = [row[:] for row in grid]  # Create a new grid to avoid modifying the original during iteration
@@ -245,10 +257,6 @@ def rotator(ID):
                     10: 12, # generator down to right
                     12: 9  # generator right to up
                 }
-    
-    if ID not in rotation_mapping_clockwise and rotation_mapping_anticlockwise:
-        print("Unexpected value received: rotator subroutine")
-        return grid
 
     if ID == 13:
         rotation_mapping = rotation_mapping_clockwise
@@ -265,12 +273,13 @@ def rotator(ID):
                 temp_grid[row][col + 1] = rotation_mapping[temp_grid[row][col + 1]]
     return temp_grid
 
+
 def main():
     global grid
     window_running = True
     sim_running = False
     count = 0
-    update_freq = FPS * 0.5
+    update_freq = FPS * 0.4
 
     while window_running:
         clock.tick(FPS)
@@ -296,11 +305,8 @@ def main():
                     grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
                     sim_running = False
                     count = 0
-                
-    
-        screen.fill(BLACK)
+        
         draw_grid()
-        py.display.update()   
    
     py.quit()
 
