@@ -1,5 +1,6 @@
 import pygame as py
 import pathlib
+import button
 
 py.init()
 
@@ -20,26 +21,44 @@ clock = py.time.Clock()
 IMAGE_DIR = pathlib.Path(__file__).parent/'images'
 
 cell_images = {
-    1: py.image.load(IMAGE_DIR / 'Wall.png'),
-    2: py.image.load(IMAGE_DIR / 'Blank4.png'),
-    3: py.image.load(IMAGE_DIR / 'BlankX.png'),
-    4: py.image.load(IMAGE_DIR / 'BlankY.png'),
-    5: py.image.load(IMAGE_DIR / 'PusherUp.png'),
-    6: py.image.load(IMAGE_DIR / 'PusherDown.png'),
-    7: py.image.load(IMAGE_DIR / 'PusherLeft.png'),
-    8: py.image.load(IMAGE_DIR / 'PusherRight.png'),
-    9: py.image.load(IMAGE_DIR / 'GeneratorUp.png'),
-    10: py.image.load(IMAGE_DIR / 'GeneratorDown.png'),
-    11: py.image.load(IMAGE_DIR / 'GeneratorLeft.png'),
-    12: py.image.load(IMAGE_DIR / 'GeneratorRight.png'),
-    13: py.image.load(IMAGE_DIR / 'RotatorClockwise.png'),
-    14: py.image.load(IMAGE_DIR / 'RotatorAnticlockwise.png')
+    1: py.image.load(IMAGE_DIR / 'Wall.png').convert_alpha(),
+    2: py.image.load(IMAGE_DIR / 'Blank4.png').convert_alpha(),
+    3: py.image.load(IMAGE_DIR / 'BlankX.png').convert_alpha(),
+    4: py.image.load(IMAGE_DIR / 'BlankY.png').convert_alpha(),
+    5: py.image.load(IMAGE_DIR / 'PusherUp.png').convert_alpha(),
+    6: py.image.load(IMAGE_DIR / 'PusherDown.png').convert_alpha(),
+    7: py.image.load(IMAGE_DIR / 'PusherLeft.png').convert_alpha(),
+    8: py.image.load(IMAGE_DIR / 'PusherRight.png').convert_alpha(),
+    9: py.image.load(IMAGE_DIR / 'GeneratorUp.png').convert_alpha(),
+    10: py.image.load(IMAGE_DIR / 'GeneratorDown.png').convert_alpha(),
+    11: py.image.load(IMAGE_DIR / 'GeneratorLeft.png').convert_alpha(),
+    12: py.image.load(IMAGE_DIR / 'GeneratorRight.png').convert_alpha(),
+    13: py.image.load(IMAGE_DIR / 'RotatorClockwise.png').convert_alpha(),
+    14: py.image.load(IMAGE_DIR / 'RotatorAnticlockwise.png').convert_alpha()
 }
-
-
 #Scale images to fit the size of the grid
 for i in cell_images:
     cell_images[i] = py.transform.scale(cell_images[i], (TILE_SIZE, TILE_SIZE))
+
+start_img = py.image.load(IMAGE_DIR / 'Start.png').convert_alpha()
+stop_img = py.image.load(IMAGE_DIR / 'Stop.png').convert_alpha()
+step_img = py.image.load(IMAGE_DIR / 'Step.png').convert_alpha()
+restart_img = py.image.load(IMAGE_DIR / 'Restart.png').convert_alpha()
+back_img = py.image.load(IMAGE_DIR / 'Back.png').convert_alpha()
+play_img = py.image.load(IMAGE_DIR / 'Play.png').convert_alpha()
+quit_img = py.image.load(IMAGE_DIR / 'Quit.png').convert_alpha()
+title_img = py.transform.scale(py.image.load(IMAGE_DIR / 'Title.png').convert_alpha(), (536, 56))
+levels_img = py.transform.scale(py.image.load(IMAGE_DIR / 'Levels.png').convert_alpha(), (280, 56))
+
+#Game screen buttons
+start_button = button.Button(50, 675, start_img, 5)
+step_button = button.Button(150, 675, step_img, 5)
+restart_button = button.Button(250, 675, restart_img, 5)
+back_button = button.Button(50, 50, back_img, 3)
+
+#Menu screen buttons
+play_button = button.Button(284, 250, play_img, 8)
+quit_button = button.Button(342, 375, quit_img, 4)
 
 grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
 
@@ -62,7 +81,6 @@ grid[5][7] = 12
 
 def draw_grid():
     global grid
-    screen.fill(BLACK)
 
     for row in range(GRID_HEIGHT):
         for col in range(GRID_WIDTH):
@@ -80,7 +98,6 @@ def draw_grid():
     for col in range(GRID_WIDTH):
         py.draw.line(screen, GREY, (col * TILE_SIZE, 0), (col * TILE_SIZE, HEIGHT))
     
-    py.display.update()   
 
 
 def cell_properties(cell_id):
@@ -274,7 +291,7 @@ def rotator(ID):
     return temp_grid
 
 
-def main():
+def game():
     global grid
     window_running = True
     sim_running = False
@@ -291,24 +308,82 @@ def main():
             count = 0
             grid = adjust_grid()
 
-        py.display.set_caption("Playing" if sim_running else "Paused")
-
+        screen.fill(BLACK)
+        draw_grid()
+        if start_button.draw(screen):
+            sim_running = not sim_running
+        if step_button.draw(screen):
+            sim_running = False
+            grid = adjust_grid()
+        if restart_button.draw(screen):
+            print('restart')
+        if back_button.draw(screen):
+            return
+        py.display.update()
+    
         for event in py.event.get():
             if event.type == py.QUIT:
                 window_running = False
             
-            if event.type == py.KEYDOWN:
-                if event.key == py.K_SPACE:
-                    sim_running = not sim_running
+            if event.type == py.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = event.pos
+                grid_x = mouse_x // TILE_SIZE
+                grid_y = mouse_y // TILE_SIZE
+                print(f"Mouse clicked at: ({mouse_x}, {mouse_y})")
+                print(f"Grid position: ({grid_x}, {grid_y})")
                 
-                if event.key == py.K_c:
-                    grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
-                    sim_running = False
-                    count = 0
-        
-        draw_grid()
-   
+            if event.type == py.KEYDOWN:
+                pass
+
     py.quit()
 
+def level_select():
+    window_running = True
+    while window_running:
+        clock.tick(FPS)
+        
+        screen.fill(BLACK)
+        screen.blit(levels_img, (260, 50))
+        if back_button.draw(screen):
+            return
+        if start_button.draw(screen):
+            game()
+        py.display.update()
+        
+        for event in py.event.get():
+            if event.type == py.QUIT:
+                window_running = False
+
+            if event.type == py.KEYDOWN:
+                pass
+
+    py.quit()
+
+def menu():
+    window_running = True
+    while window_running:
+        clock.tick(FPS)
+        
+        screen.fill(BLACK)
+        screen.blit(title_img, (132, 100))
+        if play_button.draw(screen):
+            level_select()
+        if quit_button.draw(screen):
+            window_running = False
+        py.display.update()
+
+        for event in py.event.get():
+            if event.type == py.QUIT:
+                window_running = False
+
+            if event.type == py.KEYDOWN:
+                pass
+    py.quit()
+        
+
+
+
 if __name__ == "__main__":
-    main()
+    menu()
+
+py.quit
