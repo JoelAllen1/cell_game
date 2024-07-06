@@ -13,6 +13,11 @@ GRID_WIDTH = WIDTH // TILE_SIZE
 GRID_HEIGHT = HEIGHT // TILE_SIZE
 FPS = 60
 
+# Variables to track dragging
+dragging = False
+dragged_cell = None
+original_pos = None
+
 screen = py.display.set_mode((WIDTH, HEIGHT))
 
 clock = py.time.Clock()
@@ -77,9 +82,18 @@ grid[6][5] = 8
 grid[5][6] = 6
 grid[6][6] = 3
 grid[5][7] = 12
+# Define the valid drag-and-drop area (top-left and bottom-right coordinates)
+valid_area_top_left = (1, 1)
+valid_area_bottom_right = (20, 20)
+
+def is_within_valid_area(col, row):
+    return (
+        valid_area_top_left[0] <= col <= valid_area_bottom_right[0] and
+        valid_area_top_left[1] <= row <= valid_area_bottom_right[1]
+    )
 
 
-def draw_grid():
+def draw_grid(dragging=False, dragged_cell=None, mouse_pos=None):
     global grid
 
     for row in range(GRID_HEIGHT):
@@ -98,6 +112,8 @@ def draw_grid():
     for col in range(GRID_WIDTH):
         py.draw.line(screen, GREY, (col * TILE_SIZE, 0), (col * TILE_SIZE, HEIGHT))
     
+    if dragging and dragged_cell is not None:
+        screen.blit(dragged_cell, (mouse_pos[0] - TILE_SIZE // 2, mouse_pos[1] - TILE_SIZE // 2))
 
 
 def cell_properties(cell_id):
@@ -292,9 +308,10 @@ def rotator(ID):
 
 
 def game():
-    global grid
+    global grid, dragging, dragged_cell, original_pos
     window_running = True
     sim_running = False
+    editing = True
     count = 0
     update_freq = FPS * 0.4
 
@@ -309,14 +326,22 @@ def game():
             grid = adjust_grid()
 
         screen.fill(BLACK)
-        draw_grid()
+        draw_grid(dragging, dragged_cell, py.mouse.get_pos())
         if start_button.draw(screen):
             sim_running = not sim_running
+            if editing:
+                edited_grid = [row[:] for row in grid]
+                editing = False
         if step_button.draw(screen):
             sim_running = False
             grid = adjust_grid()
+            if editing:
+                edited_grid = [row[:] for row in grid]
+                editing = False
         if restart_button.draw(screen):
-            print('restart')
+            sim_running = False
+            grid = [row[:] for row in edited_grid]
+            editing = True
         if back_button.draw(screen):
             return
         py.display.update()
@@ -325,12 +350,35 @@ def game():
             if event.type == py.QUIT:
                 window_running = False
             
-            if event.type == py.MOUSEBUTTONDOWN:
+            if event.type == py.MOUSEBUTTONDOWN and event.button == 1:  # Check for left mouse button
                 mouse_x, mouse_y = event.pos
-                grid_x = mouse_x // TILE_SIZE
-                grid_y = mouse_y // TILE_SIZE
-                print(f"Mouse clicked at: ({mouse_x}, {mouse_y})")
-                print(f"Grid position: ({grid_x}, {grid_y})")
+                col = mouse_x // TILE_SIZE
+                row = mouse_y // TILE_SIZE
+                
+                if 0 <= col < GRID_WIDTH and 0 <= row < GRID_HEIGHT and is_within_valid_area(col, row) and editing:
+                    cell_id = grid[row][col]
+                    if cell_id != 0:  # Only start dragging if the cell is not empty
+                        dragging = True
+                        dragged_cell = cell_images[cell_id]
+                        original_pos = (col, row)
+                        grid[row][col] = 0  # Temporarily clear the cell in the grid
+
+            if event.type == py.MOUSEBUTTONUP and event.button == 1:  # Check for left mouse button
+                if dragging:
+                    mouse_x, mouse_y = event.pos
+                    col = mouse_x // TILE_SIZE
+                    row = mouse_y // TILE_SIZE
+                    
+                    if 0 <= col < GRID_WIDTH and 0 <= row < GRID_HEIGHT and is_within_valid_area(col, row) and editing:
+                        # Place the cell in the new position
+                        grid[original_pos[1]][original_pos[0]], grid[row][col] = grid[row][col], cell_id
+                    else:
+                        # Revert the cell to its original position
+                        grid[original_pos[1]][original_pos[0]] = list(cell_images.keys())[list(cell_images.values()).index(dragged_cell)]
+
+                    dragging = False
+                    dragged_cell = None
+                    original_pos = None
                 
             if event.type == py.KEYDOWN:
                 pass
