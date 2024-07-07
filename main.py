@@ -1,6 +1,7 @@
 import pygame as py
 import pathlib
 import button
+import ast
 
 py.init()
 
@@ -8,10 +9,11 @@ BLACK = (0, 0, 0)
 GREY = (128, 128, 128)
 
 WIDTH, HEIGHT = 800, 800
-TILE_SIZE = 25
-GRID_WIDTH = WIDTH // TILE_SIZE
-GRID_HEIGHT = HEIGHT // TILE_SIZE
+TILE_SIZE = 0
+GRID_WIDTH = 0
+GRID_HEIGHT = 0
 FPS = 60
+grid = []
 
 # Variables to track dragging
 dragging = False
@@ -39,72 +41,76 @@ cell_images = {
     11: py.image.load(IMAGE_DIR / 'GeneratorLeft.png').convert_alpha(),
     12: py.image.load(IMAGE_DIR / 'GeneratorRight.png').convert_alpha(),
     13: py.image.load(IMAGE_DIR / 'RotatorClockwise.png').convert_alpha(),
-    14: py.image.load(IMAGE_DIR / 'RotatorAnticlockwise.png').convert_alpha()
+    14: py.image.load(IMAGE_DIR / 'RotatorAnticlockwise.png').convert_alpha(),
+    15: py.image.load(IMAGE_DIR / 'Badguy.png').convert_alpha()
 }
-#Scale images to fit the size of the grid
-for i in cell_images:
-    cell_images[i] = py.transform.scale(cell_images[i], (TILE_SIZE, TILE_SIZE))
+
 
 start_img = py.image.load(IMAGE_DIR / 'Start.png').convert_alpha()
 stop_img = py.image.load(IMAGE_DIR / 'Stop.png').convert_alpha()
 step_img = py.image.load(IMAGE_DIR / 'Step.png').convert_alpha()
 restart_img = py.image.load(IMAGE_DIR / 'Restart.png').convert_alpha()
 back_img = py.image.load(IMAGE_DIR / 'Back.png').convert_alpha()
+next_img = py.image.load(IMAGE_DIR / 'Next.png').convert_alpha()
 play_img = py.image.load(IMAGE_DIR / 'Play.png').convert_alpha()
 quit_img = py.image.load(IMAGE_DIR / 'Quit.png').convert_alpha()
+level1_img = py.image.load(IMAGE_DIR / 'Level1.png').convert_alpha()
+level2_img = py.image.load(IMAGE_DIR / 'Level2.png').convert_alpha()
+level3_img = py.image.load(IMAGE_DIR / 'Level3.png').convert_alpha()
+completedlevel1_img = py.image.load(IMAGE_DIR / 'completedlevel1.png').convert_alpha()
+completedlevel2_img = py.image.load(IMAGE_DIR / 'completedlevel2.png').convert_alpha()
+completedlevel3_img = py.image.load(IMAGE_DIR / 'completedlevel3.png').convert_alpha()
 title_img = py.transform.scale(py.image.load(IMAGE_DIR / 'Title.png').convert_alpha(), (536, 56))
 levels_img = py.transform.scale(py.image.load(IMAGE_DIR / 'Levels.png').convert_alpha(), (280, 56))
+lock_img = py.transform.scale(py.image.load(IMAGE_DIR / 'lock.png').convert_alpha(), (90, 90))
 
 #Game screen buttons
-start_button = button.Button(50, 675, start_img, 5)
-step_button = button.Button(150, 675, step_img, 5)
-restart_button = button.Button(250, 675, restart_img, 5)
+start_button = button.Button(50, 676, start_img, 5)
+stop_button = button.Button(50, 676, stop_img, 5)
+step_button = button.Button(150, 676, step_img, 5)
+restart_button = button.Button(250, 676, restart_img, 5)
 back_button = button.Button(50, 50, back_img, 3)
+next_button = button.Button(600, 676, next_img, 5)
+
+level1_button = button.Button(155, 355, level1_img, 6)
+level2_button = button.Button(355, 355, level2_img, 6)
+level3_button = button.Button(555, 355, level3_img, 6)
+completedlevel1_button = button.Button(155, 355, completedlevel1_img, 6)
+completedlevel2_button = button.Button(355, 355, completedlevel2_img, 6)
+completedlevel3_button = button.Button(555, 355, completedlevel3_img, 6)
 
 #Menu screen buttons
 play_button = button.Button(284, 250, play_img, 8)
 quit_button = button.Button(342, 375, quit_img, 4)
 
-grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
 
-# Set the borders to wall cells
-for col in range(GRID_WIDTH):
-    grid[0][col] = 1
-    grid[GRID_HEIGHT - 1][col] = 1
-
-for row in range(GRID_HEIGHT):
-    grid[row][0] = 1
-    grid[row][GRID_WIDTH - 1] = 1
-
-
-grid[5][5] = 8
-grid[6][5] = 8
-grid[5][6] = 6
-grid[6][6] = 3
-grid[5][7] = 12
-# Define the valid drag-and-drop area (top-left and bottom-right coordinates)
-valid_area_top_left = (1, 1)
-valid_area_bottom_right = (20, 20)
-
-def is_within_valid_area(col, row):
+def is_within_valid_area(col, row, level):
+    valid_area_top_left = load_value('levels.txt', level)[0]
+    valid_area_bottom_right = load_value('levels.txt', level)[1]
     return (
         valid_area_top_left[0] <= col <= valid_area_bottom_right[0] and
         valid_area_top_left[1] <= row <= valid_area_bottom_right[1]
     )
 
 
-def draw_grid(dragging=False, dragged_cell=None, mouse_pos=None):
-    global grid
+def draw_grid(level, dragging=False, dragged_cell=None, mouse_pos=None):
+    global grid, TILE_SIZE, GRID_HEIGHT, GRID_WIDTH
+    valid_area_top_left = load_value('levels.txt', level)[0]
+    valid_area_bottom_right = load_value('levels.txt', level)[1]
+    #Scale images to fit the size of the grid
+    for i in cell_images:
+        cell_images[i] = py.transform.scale(cell_images[i], (TILE_SIZE, TILE_SIZE))
 
+
+    py.draw.rect(screen, (48, 48, 48), (valid_area_top_left[0] * TILE_SIZE, valid_area_top_left[1] * TILE_SIZE, 
+    (valid_area_bottom_right[0] - valid_area_top_left[0] + 1) * TILE_SIZE, (valid_area_bottom_right[1] - valid_area_top_left[1] + 1) * TILE_SIZE))
+    
     for row in range(GRID_HEIGHT):
         for col in range(GRID_WIDTH):
             cell_id = grid[row][col]
 
             if cell_id in cell_images:
                 screen.blit(cell_images[cell_id], (col * TILE_SIZE, row * TILE_SIZE))
-            else:
-                # Handle the case where the cell_id does not have an associated image
-                py.draw.rect(screen, (0, 0, 0), (col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE))
 
     for row in range(GRID_HEIGHT):
         py.draw.line(screen, GREY, (0, row * TILE_SIZE), (WIDTH, row * TILE_SIZE))
@@ -114,7 +120,7 @@ def draw_grid(dragging=False, dragged_cell=None, mouse_pos=None):
     
     if dragging and dragged_cell is not None:
         screen.blit(dragged_cell, (mouse_pos[0] - TILE_SIZE // 2, mouse_pos[1] - TILE_SIZE // 2))
-
+    
 
 def cell_properties(cell_id):
     if cell_id == 0:  # Empty Cell
@@ -127,7 +133,7 @@ def cell_properties(cell_id):
         return {'movable_x': True, 'movable_y': False}
     elif cell_id == 4:  # Blank Y Cell
         return {'movable_x': False, 'movable_y': True}
-    elif cell_id in (5, 6, 7, 8, 9, 10, 11, 12, 13, 14):  # Every Other Cell
+    elif cell_id in (5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15):  # Every Other Cell
         return {'movable_x': True, 'movable_y': True}
     else:  # Default case for undefined cell_ids
         return {}
@@ -135,6 +141,7 @@ def cell_properties(cell_id):
 
 def adjust_grid():
     global grid
+    new_grid = [row[:] for row in grid]  #to store the locations of the bad guy cells
 
     for ID in range(5, 15):
         if ID >= 5 and ID <= 8:
@@ -143,6 +150,8 @@ def adjust_grid():
             grid = generator(ID)
         elif ID == 13 or ID == 14:
             grid = rotator(ID)
+    
+    grid = bad_guy(new_grid)
         
 
     return grid
@@ -182,8 +191,9 @@ def pusher(ID):
                 while run:
                     check_id = grid[row + y*sy][col + y*sx]
 
-                    if check_id == 0:
+                    if check_id == 0 or check_id == 15:
                         run = False
+                        grid[row + y*sy][col + y*sx] = 0
                     elif (cell_properties(check_id)[movable] == False) or (check_id == opp_id):
                         run = False
                         list_cell = []
@@ -226,8 +236,9 @@ def generator(ID):
                 while run:
                     check_id = grid[row + y*sy][col + y*sx]
 
-                    if check_id == 0:
+                    if check_id == 0 or check_id == 15:
                         run = False
+                        grid[row + y*sy][col + y*sx] = 0
                     elif (cell_properties(check_id)[movable] == False) or (check_id == opp_id and grid[row + sy * (y +1)][col + sx * (y + 1)] != 0):
                         run = False
                         list_cell = []
@@ -255,6 +266,7 @@ def rotator(ID):
                     2:2, # Blank
                     13:13, # Rotator
                     14:14, # Rotator
+                    15:15, #Badguy
                     
                     3: 4, # blank x to y
                     4: 3, # blank y to x
@@ -276,6 +288,7 @@ def rotator(ID):
                     2:2, # Blank
                     13:13, # Rotator
                     14:14, # Rotator
+                    15:15, # Badguy
                     
                     3: 4, # blank x to y
                     4: 3, # blank y to x
@@ -306,12 +319,39 @@ def rotator(ID):
                 temp_grid[row][col + 1] = rotation_mapping[temp_grid[row][col + 1]]
     return temp_grid
 
+def bad_guy(new_grid):
 
-def game():
-    global grid, dragging, dragged_cell, original_pos
+    for row in range(GRID_HEIGHT):
+        for col in range(GRID_WIDTH):
+            if new_grid[row][col] == 15:
+                if grid[row][col] != 0 and grid[row][col] != 15:
+                    grid[row][col] = 0
+
+    return grid
+
+
+def save_value(input_value):
+    with open('progress.txt', 'w') as f:
+        f.write(input_value)
+
+def load_value(file_name, index):
+    with open(file_name, 'r') as f:
+        read = ast.literal_eval(f.read())
+        if index != None:
+            read = read[index]
+    return read
+
+
+def game(level):
+    global grid, dragging, dragged_cell, original_pos, TILE_SIZE, GRID_HEIGHT, GRID_WIDTH, WIDTH, HEIGHT
     window_running = True
     sim_running = False
     editing = True
+    TILE_SIZE = load_value('levels.txt', level)[2]
+    GRID_WIDTH = WIDTH // TILE_SIZE
+    GRID_HEIGHT = HEIGHT // TILE_SIZE
+    grid = [[0 for _ in range(GRID_WIDTH)] for _ in range(GRID_HEIGHT)]
+    grid = load_value('levels.txt', level)[3]
     count = 0
     update_freq = FPS * 0.4
 
@@ -326,26 +366,44 @@ def game():
             grid = adjust_grid()
 
         screen.fill(BLACK)
-        draw_grid(dragging, dragged_cell, py.mouse.get_pos())
-        if start_button.draw(screen):
-            sim_running = not sim_running
-            if editing:
-                edited_grid = [row[:] for row in grid]
-                editing = False
+        draw_grid(level, dragging, dragged_cell, py.mouse.get_pos())
+        
+        if sim_running:
+            if stop_button.draw(screen):
+                sim_running = False
+        else:
+            if start_button.draw(screen):
+                sim_running = True
+                if editing:
+                    edited_grid = [row[:] for row in grid]
+                    editing = False
+        
+        
         if step_button.draw(screen):
             sim_running = False
             grid = adjust_grid()
             if editing:
                 edited_grid = [row[:] for row in grid]
                 editing = False
-        if restart_button.draw(screen):
-            sim_running = False
-            grid = [row[:] for row in edited_grid]
-            editing = True
+        if not editing:
+            if restart_button.draw(screen):
+                sim_running = False
+                grid = [row[:] for row in edited_grid]
+                editing = True
         if back_button.draw(screen):
             return
+
+        if not any(15 in row for row in grid):
+            progress = load_value('progress.txt', None)
+            progress[level] = 2
+            if progress[level + 1] == 0:
+                progress[level + 1] = 1
+            save_value(str(progress))
+            if next_button.draw(screen):
+                return
+
         py.display.update()
-    
+
         for event in py.event.get():
             if event.type == py.QUIT:
                 window_running = False
@@ -355,7 +413,7 @@ def game():
                 col = mouse_x // TILE_SIZE
                 row = mouse_y // TILE_SIZE
                 
-                if 0 <= col < GRID_WIDTH and 0 <= row < GRID_HEIGHT and is_within_valid_area(col, row) and editing:
+                if 0 <= col < GRID_WIDTH and 0 <= row < GRID_HEIGHT and is_within_valid_area(col, row, level) and editing:
                     cell_id = grid[row][col]
                     if cell_id != 0:  # Only start dragging if the cell is not empty
                         dragging = True
@@ -369,7 +427,7 @@ def game():
                     col = mouse_x // TILE_SIZE
                     row = mouse_y // TILE_SIZE
                     
-                    if 0 <= col < GRID_WIDTH and 0 <= row < GRID_HEIGHT and is_within_valid_area(col, row) and editing:
+                    if 0 <= col < GRID_WIDTH and 0 <= row < GRID_HEIGHT and is_within_valid_area(col, row, level) and editing:
                         # Place the cell in the new position
                         grid[original_pos[1]][original_pos[0]], grid[row][col] = grid[row][col], cell_id
                     else:
@@ -387,15 +445,37 @@ def game():
 
 def level_select():
     window_running = True
+    
     while window_running:
         clock.tick(FPS)
+        levels = load_value('progress.txt', None)
         
         screen.fill(BLACK)
         screen.blit(levels_img, (260, 50))
         if back_button.draw(screen):
             return
-        if start_button.draw(screen):
-            game()
+        if levels[1] == 1:
+            if level1_button.draw(screen):
+                game(1)
+        else:
+            if completedlevel1_button.draw(screen):
+                game(1)
+        if levels[2] == 0:
+            screen.blit(lock_img, (355, 355))
+        elif levels[2] == 1:
+            if level2_button.draw(screen):
+                game(2)
+        else:
+            if completedlevel2_button.draw(screen):
+                game(2)
+        if levels[3] == 0:
+            screen.blit(lock_img, (555, 355))
+        elif levels[3] == 1:
+            if level3_button.draw(screen):
+                game(3)
+        else:
+            if completedlevel3_button.draw(screen):
+                game(3)
         py.display.update()
         
         for event in py.event.get():
