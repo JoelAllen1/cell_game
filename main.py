@@ -91,8 +91,8 @@ resetprogress_button = button.Button(347, 700, resetprogress_img, 2)
 
 #Menu screen buttons
 play_button = button.Button(284, 250, play_img, 8)
-quit_button = button.Button(342, 449, quit_img, 4)
-help_button = button.Button(342, 375, help_img, 4)
+quit_button = button.Button(342, 375, quit_img, 4)
+help_button = button.Button(663, 736, help_img, 3)
 
 
 def is_within_valid_area(col, row, level): # Used in functionality of editing the grid to determine the area that can be edited
@@ -407,6 +407,9 @@ def game(level): #The game window where all the gameplay happens
                 sim_running = False
                 grid = [row[:] for row in edited_grid]
                 editing = True
+        if help_button.draw(screen):
+            sim_running = False
+            help()
         if back_button.draw(screen):
             return
 
