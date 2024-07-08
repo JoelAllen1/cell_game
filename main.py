@@ -27,7 +27,7 @@ clock = py.time.Clock()
 
 
 IMAGE_DIR = pathlib.Path(__file__).parent/'images'
-
+#loading all cell images
 cell_images = {
     1: py.image.load(IMAGE_DIR / 'Wall.png').convert_alpha(),
     2: py.image.load(IMAGE_DIR / 'Blank4.png').convert_alpha(),
@@ -46,7 +46,7 @@ cell_images = {
     15: py.image.load(IMAGE_DIR / 'Enemy.png').convert_alpha()
 }
 
-
+#Loading all non cell images
 start_img = py.image.load(IMAGE_DIR / 'Start.png').convert_alpha()
 stop_img = py.image.load(IMAGE_DIR / 'Stop.png').convert_alpha()
 step_img = py.image.load(IMAGE_DIR / 'Step.png').convert_alpha()
@@ -92,16 +92,17 @@ resetprogress_button = button.Button(347, 700, resetprogress_img, 2)
 #Menu screen buttons
 play_button = button.Button(284, 250, play_img, 8)
 quit_button = button.Button(342, 375, quit_img, 4)
-help_button = button.Button(663, 736, help_img, 3)
+help_button = button.Button(663, 25, help_img, 3)
 
 
-def is_within_valid_area(col, row, level): # Used in functionality of editing the grid to determine the area that can be edited
+def is_within_valid_area(col, row, level): #Minor subroutine that is used in functionality of editing the grid to determine the area that can be edited
     valid_area_top_left = load_value('levels.txt', level)[0]
     valid_area_bottom_right = load_value('levels.txt', level)[1]
     return (
         valid_area_top_left[0] <= col <= valid_area_bottom_right[0] and
         valid_area_top_left[1] <= row <= valid_area_bottom_right[1]
     )
+
 
 
 def draw_grid(level, dragging=False, dragged_cell=None, mouse_pos=None): #Draws the entire game screen except for the buttons
@@ -112,26 +113,27 @@ def draw_grid(level, dragging=False, dragged_cell=None, mouse_pos=None): #Draws 
     for i in cell_images:
         cell_images[i] = py.transform.scale(cell_images[i], (TILE_SIZE, TILE_SIZE))
 
-
+    #draws grey rectangle where the user is allowed to edit
     py.draw.rect(screen, (48, 48, 48), (valid_area_top_left[0] * TILE_SIZE, valid_area_top_left[1] * TILE_SIZE, 
     (valid_area_bottom_right[0] - valid_area_top_left[0] + 1) * TILE_SIZE, (valid_area_bottom_right[1] - valid_area_top_left[1] + 1) * TILE_SIZE))
-    
+    #draw cells onto the screen using cell_images
     for row in range(GRID_HEIGHT):
         for col in range(GRID_WIDTH):
             cell_id = grid[row][col]
 
             if cell_id in cell_images:
                 screen.blit(cell_images[cell_id], (col * TILE_SIZE, row * TILE_SIZE))
-
+    #draws horizontal and vertical lines to make grid
     for row in range(GRID_HEIGHT):
         py.draw.line(screen, GREY, (0, row * TILE_SIZE), (WIDTH, row * TILE_SIZE))
 
     for col in range(GRID_WIDTH):
         py.draw.line(screen, GREY, (col * TILE_SIZE, 0), (col * TILE_SIZE, HEIGHT))
-    
+    #draws the cell that is being moved on the position of the mouse
     if dragging and dragged_cell is not None:
         screen.blit(dragged_cell, (mouse_pos[0] - TILE_SIZE // 2, mouse_pos[1] - TILE_SIZE // 2))
     
+
 
 def cell_properties(cell_id): #Stores the properties of the different cell types
     if cell_id == 0:  # Empty Cell
@@ -148,6 +150,7 @@ def cell_properties(cell_id): #Stores the properties of the different cell types
         return {'movable_x': True, 'movable_y': True}
     else:  # Default case for undefined cell_ids
         return {}
+
 
 
 def adjust_grid(): #Handles the execution of the functionality to update the grid
@@ -191,7 +194,7 @@ def pusher(ID): #Functionality for pusher cells
         row_range = range(GRID_HEIGHT)
         col_range = range(GRID_WIDTH - 1, -1, -1)
 
-    for row in row_range:
+    for row in row_range: #iterates through whole grid
         for col in col_range:
             cell_id = grid[row][col]
             if cell_id == ID:
@@ -199,7 +202,7 @@ def pusher(ID): #Functionality for pusher cells
                 y = 0
                 list_cell = []
 
-                while run:
+                while run: # makes a list of all the cells that need to be moved
                     check_id = grid[row + y*sy][col + y*sx]
 
                     if check_id == 0 or check_id == 15:
@@ -212,7 +215,7 @@ def pusher(ID): #Functionality for pusher cells
                         list_cell.append(check_id)
                         y += 1
 
-                while list_cell:
+                while list_cell: # iterates through the list to make changes
                     temp_grid[row + y*sy][col + y*sx] = list_cell.pop()
                     y -= 1
                     temp_grid[row][col] = 0
@@ -236,7 +239,7 @@ def generator(ID): #Functionality for generator cells
 
     sy, sx, opp_id, movable = directions[ID]
 
-    for row in range(GRID_HEIGHT):
+    for row in range(GRID_HEIGHT): #iterates through whole grid
         for col in range(GRID_WIDTH):
             if grid[row][col] == ID and (grid[row - sy][col - sx] > 1):
                 run = True
@@ -244,7 +247,7 @@ def generator(ID): #Functionality for generator cells
                 y = 1
                 list_cell = []
 
-                while run:
+                while run: # makes a list of all the cells that need to be moved
                     check_id = grid[row + y*sy][col + y*sx]
 
                     if check_id == 0 or check_id == 15:
@@ -258,7 +261,7 @@ def generator(ID): #Functionality for generator cells
                         list_cell.append(check_id)
                         y += 1
 
-                while list_cell:
+                while list_cell: #iterates through the list to make changes
                     temp_grid[row + y * sy][col + y * sx] = list_cell.pop()
                     y -= 1
 
@@ -320,19 +323,19 @@ def rotator(ID): #Functionality for rotator cells
     elif ID == 14:
         rotation_mapping = rotation_mapping_anticlockwise
 
-    for row in range(GRID_HEIGHT):
+    for row in range(GRID_HEIGHT): #iterates through whole grid
         for col in range(GRID_WIDTH):
             cell_id = grid[row][col]
-            if cell_id == ID:
+            if cell_id == ID: #Replaces surrounding cells with the rotated version
                 temp_grid[row - 1][col] = rotation_mapping[temp_grid[row - 1][col]]
                 temp_grid[row + 1][col] = rotation_mapping[temp_grid[row + 1][col]]
                 temp_grid[row][col - 1] = rotation_mapping[temp_grid[row][col - 1]]
                 temp_grid[row][col + 1] = rotation_mapping[temp_grid[row][col + 1]]
     return temp_grid
 
-def enemy(new_grid): #Functionality for enemy cells
+def enemy(new_grid): #Functionality for enemy cells, if an enemy cell is in the same position as another cell, they both are removed
 
-    for row in range(GRID_HEIGHT):
+    for row in range(GRID_HEIGHT): #iterates through whole grid
         for col in range(GRID_WIDTH):
             if new_grid[row][col] == 15:
                 if grid[row][col] != 0 and grid[row][col] != 15:
@@ -341,22 +344,24 @@ def enemy(new_grid): #Functionality for enemy cells
     return grid
 
 
-def save_value(input_value): #Handles storeing player progress
+
+def save_value(input_value): #Minor subroutine that handles storeing player progress
     with open('progress.txt', 'w') as f:
         f.write(input_value)
 
-def load_value(file_name, index): #Handles retrieveing player progress and the levels
+def load_value(file_name, index): #Minor subroutine that handles retrieveing player progress and the levels
     with open(file_name, 'r') as f:
         read = ast.literal_eval(f.read())
         if index != None:
             read = read[index]
     return read
 
-def draw_text(text, y): #Handles the display of text on the help screen
+def draw_text(text, y): #Minor subroutine that handles the display of text on the help screen
     font = py.font.SysFont('Pixeloid Sans', 20)
     img = font.render(text, True, (255, 255, 255))
     text_rect = img.get_rect(center=(400, y))
     screen.blit(img, text_rect)
+
 
 
 def game(level): #The game window where all the gameplay happens
@@ -380,9 +385,9 @@ def game(level): #The game window where all the gameplay happens
 
         if count >= update_freq:
             count = 0
-            grid = adjust_grid()
+            grid = adjust_grid() #Updated the grid
 
-        screen.fill(BLACK)
+        screen.fill(BLACK) #adds background to screen
         draw_grid(level, dragging, dragged_cell, py.mouse.get_pos())
         #Drawing the buttons to the screen and handling their functionality
         if sim_running:
@@ -413,7 +418,7 @@ def game(level): #The game window where all the gameplay happens
         if back_button.draw(screen):
             return
 
-        if not any(15 in row for row in grid):
+        if not any(15 in row for row in grid): #Checking the win condition
             progress = load_value('progress.txt', None)
             progress[level] = 2
             if level + 1 in progress and progress[level + 1] == 0:
@@ -424,7 +429,7 @@ def game(level): #The game window where all the gameplay happens
 
         py.display.update()
 
-        for event in py.event.get():
+        for event in py.event.get(): #event handler
             if event.type == py.QUIT:
                 window_running = False
                 py.quit()
@@ -469,8 +474,6 @@ def game(level): #The game window where all the gameplay happens
                     dragged_cell = None
                     original_pos = None
 
-
-
 def level_select(): #The level select screen
     window_running = True
     next = 0
@@ -479,7 +482,7 @@ def level_select(): #The level select screen
         clock.tick(FPS)
         levels = load_value('progress.txt', None) #Retrieves which levels are locked, unlocked or completed
         
-        screen.fill(BLACK)
+        screen.fill(BLACK) #adds background and text to screen
         screen.blit(levels_img, (260, 25))
         #Drawing the buttons to the screen and handling their functionality
         if back_button.draw(screen):
@@ -516,7 +519,7 @@ def level_select(): #The level select screen
             save_value("{1: 1, 2: 0, 3: 0}")
         py.display.update()
         
-        for event in py.event.get():
+        for event in py.event.get(): #event handler
             if event.type == py.QUIT:
                 window_running = False
                 py.quit()
@@ -527,7 +530,7 @@ def help(): #The help screen
     while window_running:
         clock.tick(FPS)
 
-        screen.fill(BLACK)
+        screen.fill(BLACK) #add background and text to screen
         screen.blit(helptitle_img, (308, 25))
         draw_text('Move cells within the highlighted area and then click the play button.', 150)
         draw_text('Once the play button is clicked you cannot move cells yourself.', 175)
@@ -543,19 +546,18 @@ def help(): #The help screen
             return
         py.display.update()
 
-        for event in py.event.get():
+        for event in py.event.get(): #event handler
             if event.type == py.QUIT:
                 window_running = False
                 py.quit()
                 sys.exit()
-
 
 def menu(): #The menu screen
     window_running = True
     while window_running:
         clock.tick(FPS)
         
-        screen.fill(BLACK)
+        screen.fill(BLACK) #add background and text to screen
         screen.blit(title_img, (132, 100))
         #Drawing the buttons to the screen and handling their functionality
         if play_button.draw(screen):
@@ -566,7 +568,7 @@ def menu(): #The menu screen
             help()
         py.display.update()
 
-        for event in py.event.get():
+        for event in py.event.get(): #event handler
             if event.type == py.QUIT:
                 window_running = False
                 py.quit()
